@@ -36,12 +36,20 @@ export default function BreakScreen({
   const [rating, setRating] = useState<number | null>(null);
 
   // Celebrate a finished (non-abandoned) session with a quick confetti burst.
+  // Use a dedicated, click-through canvas so it never blocks the rating buttons.
   useEffect(() => {
     if (status === "abandoned") return;
+
+    const canvas = document.createElement("canvas");
+    canvas.style.cssText =
+      "position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:50";
+    document.body.appendChild(canvas);
+    const fire = confetti.create(canvas, { resize: true, useWorker: true });
+
     const shots = [0, 180, 360];
     const timers = shots.map((delay) =>
       window.setTimeout(() => {
-        confetti({
+        void fire({
           particleCount: 60,
           spread: 70,
           startVelocity: 38,
@@ -51,7 +59,12 @@ export default function BreakScreen({
         });
       }, delay),
     );
-    return () => timers.forEach((t) => window.clearTimeout(t));
+
+    return () => {
+      timers.forEach((t) => window.clearTimeout(t));
+      fire.reset();
+      canvas.remove();
+    };
   }, [status]);
 
   useEffect(() => {
@@ -135,10 +148,14 @@ export default function BreakScreen({
               variant="outline"
               size="icon"
               className={cn(
-                "size-10 rounded-full border-border bg-card text-base font-medium text-foreground tabular-nums shadow-none transition-[border-color,background-color] hover:border-primary hover:bg-card hover:text-foreground",
-                rating === value &&
-                  "border-primary bg-primary/[0.18] text-primary hover:bg-primary/[0.18] hover:text-primary",
+                "size-10 rounded-full border-border bg-card text-base font-medium text-foreground tabular-nums shadow-none transition-colors hover:border-primary hover:bg-muted hover:text-foreground",
+                rating === value && "border-black hover:text-white",
               )}
+              style={
+                rating === value
+                  ? { backgroundColor: "#000", color: "#fff" }
+                  : undefined
+              }
               aria-pressed={rating === value}
               aria-label={`${value} — ${RATING_LABELS[value - 1]}`}
               onClick={() => handleRate(value)}

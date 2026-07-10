@@ -73,7 +73,7 @@ export default function Home({ onStartSession, onOpenTasks }: HomeProps) {
           </h1>
         </div>
         <img
-          className="pointer-events-none -mr-1 -mt-8 -mb-2 w-[200px] shrink-0 self-end object-contain"
+          className="pointer-events-none w-[180px] -mt-20 shrink-0 self-end object-contain"
           src={IDLE_MASCOT}
           alt="Flowky mascot waving"
         />
