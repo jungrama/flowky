@@ -1,10 +1,10 @@
 # Flowky
 
-> A clock that bends to your flow.
+> A clock that will nudge you when you're not focus.
 
 ![Flowky](./demo/demo.png)
 
-Flowky is a native macOS focus timer that adapts to how you actually work. Built with Tauri 2, React 18, TypeScript, Tailwind CSS 4, and shadcn/ui — fully local, no account required.
+Flowky is a macOS focus timer that will get angry when you're not focus on your goal. fully local, no account required.
 
 ## Demo
 
@@ -28,7 +28,9 @@ npm run tauri build     # production binary — outputs as "Flowky"
 
 ### Installing a downloaded build
 
-Flowky is distributed **unsigned** (no paid Apple Developer certificate), so macOS Gatekeeper will warn on first launch. To open it:
+Download here: https://github.com/jungrama/flowky/releases
+
+Flowky is distributed **unsigned** (no paid Apple Developer certificate), so macOS Gatekeeper might warn on first launch. To open it:
 
 1. Drag **Flowky** to `/Applications`.
 2. Right-click the app → **Open** → **Open** in the dialog (only needed once).
@@ -43,7 +45,7 @@ xattr -dr com.apple.quarantine /Applications/Flowky.app
 
 - **Adaptive timer** — a tape-ruler picker suggests a session length from your recent history; drag to adjust. Pause, extend +10 min, or end early.
 - **Tasks** — a simple local todo list (add / rename / complete / delete). Pick a task to focus on from the "Tasks" tab or straight from the timer's task field.
-- **Interruptions** — tap "Got distracted" to log an interruption by type.
+- **Interruptions** — flowky will angry and show notification if you're not focus.
 - **Idle detection** — after 5 minutes of OS-level inactivity an overlay checks you're still there before auto-ending the session.
 - **Break screen** — post-session summary with a 1–5 quality rating and a suggested break, plus a confetti send-off on a finished session.
 - **Daily & weekly review** — focus score, 7-day chart, deep-focus time, interruptions, per-session detail (tap a row for a bottom-sheet breakdown), and a monthly heatmap calendar.
