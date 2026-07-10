@@ -2,7 +2,13 @@
 
 > A clock that bends to your flow.
 
+![Flowky](./demo/demo.png)
+
 Flowky is a native macOS focus timer that adapts to how you actually work. Built with Tauri 2, React 18, TypeScript, Tailwind CSS 4, and shadcn/ui — fully local, no account required.
+
+## Demo
+
+![Flowky demo](./demo/demo.gif)
 
 ## Prerequisites
 
@@ -88,6 +94,13 @@ Optional — off by default. Enable from **Settings → Distractions** to watch 
 
 Automatic detection needs **Accessibility** access (System Settings → Privacy & Security → Accessibility) so `active-win-pos-rs` can read the foreground app name and window title. If denied, automatic detection is skipped — manual logging still works. Flowky only checks the active app while a session is running and you have opted in.
 
+## Versioning & changelog
+
+Flowky follows [Semantic Versioning](https://semver.org/). The version is kept
+in sync across `package.json`, `src-tauri/Cargo.toml`, and
+`src-tauri/tauri.conf.json`. See [CHANGELOG.md](./CHANGELOG.md) for release
+notes.
+
 ## License
 
-MIT
+MIT — see [LICENSE](./LICENSE).
