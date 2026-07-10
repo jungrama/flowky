@@ -314,39 +314,6 @@ pub fn get_sessions(days: u32, db: State<'_, DbState>) -> Result<Vec<Session>, S
         .map_err(|e| e.to_string())
 }
 
-#[tauri::command]
-pub fn get_all_sessions(db: State<'_, DbState>) -> Result<Vec<Session>, String> {
-    let conn = db.conn.lock().map_err(|e| e.to_string())?;
-
-    let mut stmt = conn
-        .prepare(
-            "SELECT id, task, depth, started_at, ended_at, duration, planned, interrupts, rating, status
-             FROM sessions
-             ORDER BY started_at DESC",
-        )
-        .map_err(|e| e.to_string())?;
-
-    let rows = stmt
-        .query_map([], |row| {
-            Ok(Session {
-                id: Some(row.get(0)?),
-                task: row.get(1)?,
-                depth: row.get(2)?,
-                started_at: row.get(3)?,
-                ended_at: row.get(4)?,
-                duration: row.get(5)?,
-                planned: row.get(6)?,
-                interrupts: row.get(7)?,
-                rating: row.get(8)?,
-                status: row.get(9)?,
-            })
-        })
-        .map_err(|e| e.to_string())?;
-
-    rows.collect::<Result<Vec<_>, _>>()
-        .map_err(|e| e.to_string())
-}
-
 /// Wipe all logged focus data — sessions, their interruptions, and tracked app
 /// activity. App/site classification rules are kept (they're user config, not
 /// history).

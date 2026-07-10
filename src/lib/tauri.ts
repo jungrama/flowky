@@ -26,10 +26,6 @@ export interface Session {
   status: SessionStatus;
 }
 
-export async function getActiveWindow(): Promise<string> {
-  return invoke("get_active_window");
-}
-
 export async function setContextSwitchWatching(enabled: boolean): Promise<void> {
   return invoke("set_context_switch_watching", { enabled });
 }
@@ -79,10 +75,6 @@ export async function saveSession(
 
 export async function getSessions(days: number): Promise<Session[]> {
   return invoke("get_sessions", { days });
-}
-
-export async function getAllSessions(): Promise<Session[]> {
-  return invoke("get_all_sessions");
 }
 
 export async function resetData(): Promise<void> {
@@ -135,21 +127,12 @@ export interface AppActivityTotal {
   seconds: number;
 }
 
-export interface SessionTitle {
-  title: string;
-  seconds: number;
-}
-
 export async function startAppSession(): Promise<void> {
   return invoke("start_app_session");
 }
 
 export async function takeAppActivity(): Promise<AppActivityInput[]> {
   return invoke("take_app_activity");
-}
-
-export async function getSessionTitles(): Promise<SessionTitle[]> {
-  return invoke("get_session_titles");
 }
 
 export interface LiveDistraction {

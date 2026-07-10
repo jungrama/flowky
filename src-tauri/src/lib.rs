@@ -5,9 +5,9 @@ mod scorer;
 mod watcher;
 
 use db::{
-    add_task, delete_task, get_all_sessions, get_app_activity, get_app_rules,
-    get_interruption_breakdown, get_session_app_activity, get_sessions, get_site_rules, get_tasks,
-    init_db, reset_data, save_app_activity, save_session, set_app_rule, set_site_rule, update_task,
+    add_task, delete_task, get_app_activity, get_app_rules, get_interruption_breakdown,
+    get_session_app_activity, get_sessions, get_site_rules, get_tasks, init_db, reset_data,
+    save_app_activity, save_session, set_app_rule, set_site_rule, update_task,
 };
 use notifications::{
     get_tray_session, open_main_window, send_notification, set_tray_state, setup_tray,
@@ -19,7 +19,7 @@ use permissions::{
 use scorer::{compute_score, suggest_length};
 use tauri::Manager;
 use watcher::{
-    get_active_window, get_idle_seconds, get_live_distractions, get_session_titles,
+    get_idle_seconds, get_live_distractions,
     set_context_switch_watching, start_app_session, start_context_switch_watcher,
     start_idle_watcher, take_app_activity,
 };
@@ -60,7 +60,6 @@ pub fn run() {
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![
-            get_active_window,
             get_idle_seconds,
             set_context_switch_watching,
             send_notification,
@@ -70,14 +69,12 @@ pub fn run() {
             open_main_window,
             save_session,
             get_sessions,
-            get_all_sessions,
             reset_data,
             get_interruption_breakdown,
             compute_score,
             suggest_length,
             start_app_session,
             take_app_activity,
-            get_session_titles,
             get_live_distractions,
             get_app_rules,
             set_app_rule,

@@ -31,12 +31,6 @@ const BROWSER_OTHER_LABEL: &str = "Browser (other)";
 static CONTEXT_WATCH_ENABLED: AtomicBool = AtomicBool::new(false);
 
 #[derive(Clone, Serialize)]
-pub struct SessionTitle {
-    pub title: String,
-    pub seconds: i64,
-}
-
-#[derive(Clone, Serialize)]
 pub struct LiveDistraction {
     pub app: String,
     pub seconds: i64,
@@ -48,8 +42,6 @@ pub struct LiveDistraction {
 struct AppSessionState {
     /// label -> (bucket, accumulated seconds), persisted at session end.
     dwell: HashMap<String, (String, u64)>,
-    /// unmatched browser raw title -> seconds, current session only.
-    titles: HashMap<String, u64>,
     /// label currently in the foreground and how long continuously, for nudges.
     current_label: Option<String>,
     current_streak: u64,
@@ -64,11 +56,6 @@ pub fn get_idle_seconds() -> u64 {
     get_idle_time()
         .map(|idle| idle.as_secs())
         .unwrap_or(0)
-}
-
-#[tauri::command]
-pub fn get_active_window() -> String {
-    active_app_name()
 }
 
 #[tauri::command]
@@ -124,31 +111,6 @@ pub fn get_live_distractions() -> Vec<LiveDistraction> {
     rows
 }
 
-/// Unmatched browser titles seen during the current session, busiest first.
-#[tauri::command]
-pub fn get_session_titles() -> Vec<SessionTitle> {
-    let guard = APP_STATE.lock().unwrap();
-    let Some(state) = guard.as_ref() else {
-        return Vec::new();
-    };
-    let mut titles: Vec<SessionTitle> = state
-        .titles
-        .iter()
-        .map(|(title, seconds)| SessionTitle {
-            title: title.clone(),
-            seconds: *seconds as i64,
-        })
-        .collect();
-    titles.sort_by(|a, b| b.seconds.cmp(&a.seconds));
-    titles
-}
-
-fn active_app_name() -> String {
-    active_win_pos_rs::get_active_window()
-        .map(|window| window.app_name)
-        .unwrap_or_default()
-}
-
 fn active_app() -> Option<(String, String)> {
     active_win_pos_rs::get_active_window()
         .ok()
@@ -166,25 +128,17 @@ fn now_secs() -> i64 {
         .unwrap_or(0)
 }
 
-/// Classify the foreground window into (label, bucket, optional raw title to
-/// remember). The raw title is returned only for unmatched browser pages.
-fn classify(db: &DbState, app_name: &str, title: &str) -> (String, String, Option<String>) {
+/// Classify the foreground window into (label, bucket). Browser pages match
+/// against site rules by keyword; unmatched pages fall back to a neutral label.
+fn classify(db: &DbState, app_name: &str, title: &str) -> (String, String) {
     if is_browser(app_name) {
         match lookup_site_bucket(db, title) {
-            Some((keyword, bucket)) => (format!("{keyword} (web)"), bucket, None),
-            None => (
-                BROWSER_OTHER_LABEL.to_string(),
-                "neutral".to_string(),
-                if title.is_empty() {
-                    None
-                } else {
-                    Some(title.to_string())
-                },
-            ),
+            Some((keyword, bucket)) => (format!("{keyword} (web)"), bucket),
+            None => (BROWSER_OTHER_LABEL.to_string(), "neutral".to_string()),
         }
     } else {
         let bucket = lookup_app_bucket(db, app_name);
-        (app_name.to_string(), bucket, None)
+        (app_name.to_string(), bucket)
     }
 }
 
@@ -227,7 +181,7 @@ pub fn start_context_switch_watcher(app: AppHandle) {
         }
 
         let db = app.state::<DbState>();
-        let (label, bucket, raw_title) = classify(&db, &app_name, &title);
+        let (label, bucket) = classify(&db, &app_name, &title);
         eprintln!(
             "[watcher] poll: app={app_name:?} title={title:?} -> label={label:?} bucket={bucket}"
         );
@@ -247,11 +201,6 @@ pub fn start_context_switch_watcher(app: AppHandle) {
             .or_insert_with(|| (bucket.clone(), 0));
         entry.0 = bucket.clone();
         entry.1 += step;
-
-        // Remember unmatched browser titles in-memory only.
-        if let Some(t) = raw_title {
-            *state.titles.entry(t).or_insert(0) += step;
-        }
 
         // Track the continuous streak on the current label for nudging.
         if state.current_label.as_deref() == Some(label.as_str()) {
