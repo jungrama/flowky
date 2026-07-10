@@ -34,6 +34,13 @@ interface DayScore {
 
 const MS_PER_DAY = 86_400_000;
 
+/** Like formatDuration but keeps seconds visible under a minute (so short
+ *  distractions read "42s" instead of "0m"). */
+function durationOrSecs(seconds: number): string {
+  const s = Math.max(0, Math.round(seconds));
+  return s < 60 ? `${s}s` : formatDuration(s);
+}
+
 const STAT_CARD_CLASS = "gap-1 rounded-lg px-2 py-4 shadow-none";
 const STAT_ICON_CLASS =
   "mb-1 inline-flex h-[30px] w-[30px] items-center justify-center rounded-md bg-primary/12 text-primary";
@@ -372,7 +379,7 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
           <div className="flex items-stretch gap-4 rounded-[10px] border bg-card p-4">
             <div className="flex flex-none flex-col gap-0.5 border-r pr-4">
               <span className="text-2xl font-semibold leading-tight tabular-nums text-foreground">
-                {formatDuration(appBreakdown.distraction)}
+                {durationOrSecs(appBreakdown.distraction)}
               </span>
               <span className="text-xs text-muted-foreground">
                 lost to distractions
@@ -387,7 +394,7 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
                   >
                     <span className="truncate">{row.app_name}</span>
                     <span className="flex-shrink-0 tabular-nums text-muted-foreground">
-                      {formatDuration(row.seconds)}
+                      {durationOrSecs(row.seconds)}
                     </span>
                   </li>
                 ))}
