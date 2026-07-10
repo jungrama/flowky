@@ -1,7 +1,5 @@
 # Flowky
 
-> A clock that will nudge you when you're not focus.
-
 ![Flowky](./demo/demo.png)
 
 Flowky is a macOS focus timer that will get angry when you're not focus on your goal. fully local, no account required.
@@ -88,9 +86,9 @@ Browser window titles used for site classification are matched against keyword r
 
 Data location: `~/Library/Application Support/com.flowky.app/flowky.db`
 
-## Automatic distraction detection (Tier 3)
+## Automatic distraction detection
 
-Optional — off by default. Enable from **Settings → Distractions** to watch which app or browser site is in focus during an active session. Apps and sites are classified as **work**, **distraction**, or **neutral** (editable in the same panel). Linger on a distraction for a few seconds and Flowky pops a gentle nudge card — it never auto-logs an interruption. Time per app is recorded and shown as a distraction breakdown in Daily Review. Manual **Got distracted** (Tier 1) always works alongside it.
+Optional — off by default. Enable from **Settings → Distractions** to watch which app or browser site is in focus during an active session. Apps and sites are classified as **distraction** or **neutral** (editable in the same panel). Linger on a distraction for a few seconds and Flowky pops a gentle nudge card — it never auto-logs an interruption. Time per app is recorded and shown as a distraction breakdown in Daily Review.
 
 ### macOS permission
 
