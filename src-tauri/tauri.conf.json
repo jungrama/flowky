@@ -1,0 +1,73 @@
+{
+  "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Flowky",
+  "version": "0.1.0",
+  "identifier": "com.flowky.app",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "npm run build",
+    "frontendDist": "../dist"
+  },
+  "app": {
+    "macOSPrivateApi": true,
+    "windows": [
+      {
+        "label": "main",
+        "title": "Flowky",
+        "width": 420,
+        "height": 680,
+        "minWidth": 420,
+        "minHeight": 680,
+        "maxWidth": 420,
+        "maxHeight": 680,
+        "resizable": false,
+        "center": true
+      },
+      {
+        "label": "popover",
+        "title": "Flowky Popover",
+        "url": "index.html",
+        "width": 320,
+        "height": 600,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false,
+        "shadow": true
+      },
+      {
+        "label": "nudge",
+        "title": "Flowky Nudge",
+        "url": "index.html",
+        "width": 300,
+        "height": 170,
+        "resizable": false,
+        "decorations": false,
+        "transparent": true,
+        "alwaysOnTop": true,
+        "skipTaskbar": true,
+        "visible": false,
+        "focus": false,
+        "shadow": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ]
+  }
+}
