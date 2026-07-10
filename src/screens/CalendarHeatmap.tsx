@@ -1,4 +1,6 @@
-import { useEffect, useMemo, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import InfoHint from "../components/InfoHint";
 import { useSessions } from "../hooks/useSessions";
 import {
@@ -6,7 +8,6 @@ import {
   formatDuration,
   heatmapIntensity,
   monthLabel,
-  scoreTone,
   sessionsForDay,
   totalFocusSeconds,
   WEEKDAY_LABELS,
@@ -95,79 +96,89 @@ export default function CalendarHeatmap({ onOpenDay }: CalendarHeatmapProps) {
 
   return (
     <section
-      className="screen screen-review screen-heatmap"
+      className="flex w-full max-w-sm flex-col items-center gap-4"
       data-screen="calendarHeatmap"
     >
-      <div className="heatmap-nav">
-        <button
+      <div className="flex w-full items-center justify-between gap-2">
+        <Button
           type="button"
-          className="btn btn-ghost heatmap-nav-btn"
+          variant="ghost"
+          className="min-w-10 px-2 text-xl leading-none"
           onClick={() => shiftMonth(-1)}
           aria-label="Previous month"
         >
           ‹
-        </button>
-        <span className="heatmap-month-label">{monthLabel(viewMonth)}</span>
-        <button
+        </Button>
+        <span className="font-medium tabular-nums">{monthLabel(viewMonth)}</span>
+        <Button
           type="button"
-          className="btn btn-ghost heatmap-nav-btn"
+          variant="ghost"
+          className="min-w-10 px-2 text-xl leading-none"
           onClick={() => shiftMonth(1)}
           aria-label="Next month"
         >
           ›
-        </button>
+        </Button>
       </div>
 
       <div
-        className="heatmap-grid"
+        className="w-full"
         role="grid"
         aria-label={`Focus heatmap for ${monthLabel(viewMonth)}`}
       >
-        <div className="heatmap-weekdays" role="row">
+        <div className="mb-1 grid grid-cols-7 gap-1" role="row">
           {WEEKDAY_LABELS.map((label) => (
-            <span key={label} className="heatmap-weekday" role="columnheader">
+            <span
+              key={label}
+              className="text-center text-xs text-muted-foreground"
+              role="columnheader"
+            >
               {label}
             </span>
           ))}
         </div>
-        <div className="heatmap-cells">
+        <div className="grid grid-cols-7 gap-1">
           {dayData.map((day) => {
             const hasData = day.sessionCount > 0 && day.score !== null;
-            const tone = hasData ? scoreTone(day.score!) : "empty";
             const intensity = hasData ? heatmapIntensity(day.score!) : 0;
+            const pct = Math.round(intensity * 45);
 
             return (
               <button
                 key={day.date.toISOString()}
                 type="button"
                 role="gridcell"
-                className={[
-                  "heatmap-cell",
-                  !day.inMonth && "heatmap-cell-outside",
-                  hasData && `heatmap-cell-${tone}`,
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
+                className={cn(
+                  "flex aspect-square items-center justify-center rounded-md border text-xs text-foreground transition-colors hover:border-primary",
+                  !day.inMonth && "opacity-35",
+                )}
                 style={
                   hasData
-                    ? ({ "--heatmap-intensity": intensity } as CSSProperties)
+                    ? {
+                        background: `color-mix(in srgb, #111 ${pct}%, #fff)`,
+                      }
                     : undefined
                 }
                 title={dayTooltip(day)}
                 aria-label={dayTooltip(day)}
                 onClick={() => onOpenDay(day.date)}
               >
-                <span className="heatmap-cell-day">{day.date.getDate()}</span>
+                <span className="pointer-events-none">
+                  {day.date.getDate()}
+                </span>
               </button>
             );
           })}
         </div>
       </div>
 
-      <div className="heatmap-legend">
-        <span className="heatmap-legend-label">Low</span>
-        <span className="heatmap-legend-gradient" aria-hidden="true" />
-        <span className="heatmap-legend-label">High</span>
+      <div className="flex w-full items-center justify-center gap-2">
+        <span className="text-xs text-muted-foreground">Low</span>
+        <span
+          className="h-[0.6rem] w-[120px] rounded-full border bg-[linear-gradient(90deg,#fff_0%,color-mix(in_srgb,#111_45%,#fff)_100%)]"
+          aria-hidden="true"
+        />
+        <span className="text-xs text-muted-foreground">High</span>
         <InfoHint
           align="end"
           placement="below"

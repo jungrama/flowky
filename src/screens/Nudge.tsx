@@ -25,7 +25,8 @@ export default function Nudge() {
   const [shownAt, setShownAt] = useState(0);
   const [mascot, setMascot] = useState(randomBadMascot);
 
-  const dismiss = () => {
+  const dismiss = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
     void getCurrentWindow().hide();
   };
 
@@ -44,18 +45,30 @@ export default function Nudge() {
   }, []);
 
   return (
-    <div key={shownAt} className="nudge-card nudge-card-in">
-      <button
-        type="button"
-        className="nudge-close"
-        onClick={dismiss}
-        aria-label="Dismiss"
+    // Fills the whole webview so stray clicks can't fall through to the app
+    // behind the (unfocused, transparent) nudge window.
+    <div className="flex h-screen w-screen items-stretch p-2">
+      <div
+        key={shownAt}
+        className="relative flex flex-1 animate-nudge-enter items-end gap-3 overflow-hidden rounded-2xl border bg-card pl-4 pr-3 pt-4 shadow-[0_12px_32px_rgba(0,0,0,0.22)]"
       >
-        ×
-      </button>
-      <img className="nudge-face" src={mascot} alt="" aria-hidden />
-      <div className="nudge-body-text">
-        <p className="nudge-message">{message}</p>
+        <button
+          type="button"
+          className="absolute right-2 top-1.5 z-10 flex size-[22px] items-center justify-center rounded-full text-lg leading-none text-muted-foreground hover:bg-secondary hover:text-foreground"
+          onClick={dismiss}
+          aria-label="Dismiss"
+        >
+          ×
+        </button>
+        <p className="flex-1 pb-5 text-sm leading-normal text-foreground">
+          {message}
+        </p>
+        <img
+          className="-mb-1 w-[110px] flex-none animate-nudge-bob self-end object-contain"
+          src={mascot}
+          alt=""
+          aria-hidden
+        />
       </div>
     </div>
   );

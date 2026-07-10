@@ -1,7 +1,19 @@
 import { useState } from "react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 import { resetData } from "../lib/tauri";
 
-type State = "idle" | "confirm" | "working" | "done" | "error";
+type State = "idle" | "working" | "done" | "error";
 
 export default function ResetDataSettings() {
   const [state, setState] = useState<State>("idle");
@@ -20,50 +32,45 @@ export default function ResetDataSettings() {
   };
 
   return (
-    <div className="settings-group">
-      <div className="reset-card">
-        <p className="reset-title">Reset all data</p>
-        <p className="screen-subtitle reset-copy">
-          Warning: this permanently deletes every focus session, interruption, and
-          tracked app time on this machine. Your app &amp; site lists are kept. This
-          cannot be undone.
+    <div className="w-full">
+      <div className="rounded-lg border bg-card p-4">
+        <p className="text-sm font-medium text-foreground">Reset all data</p>
+        <p className="mb-4 mt-1 text-sm text-muted-foreground">
+          Warning: this permanently deletes every focus session, interruption,
+          and tracked app time on this machine. Your app &amp; site lists are
+          kept. This cannot be undone.
         </p>
 
-        {state === "confirm" ? (
-          <div className="reset-actions">
-            <button
-              type="button"
-              className="btn btn-danger btn-sm"
-              onClick={() => void wipe()}
-            >
-              Yes, delete everything
-            </button>
-            <button
-              type="button"
-              className="btn btn-ghost btn-sm"
-              onClick={() => setState("idle")}
-            >
-              Cancel
-            </button>
-          </div>
-        ) : (
-          <button
-            type="button"
-            className="btn btn-danger btn-sm reset-trigger"
-            disabled={state === "working"}
-            onClick={() => setState("confirm")}
-          >
-            {state === "working" ? "Deleting…" : "Delete everything"}
-          </button>
-        )}
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button type="button" size="sm" disabled={state === "working"}>
+              {state === "working" ? "Deleting…" : "Delete everything"}
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Delete everything?</AlertDialogTitle>
+              <AlertDialogDescription>
+                This permanently deletes every focus session, interruption, and
+                tracked app time on this machine. This cannot be undone.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction onClick={() => void wipe()}>
+                Yes, delete everything
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         {state === "done" && (
-          <p className="screen-subtitle reset-status" role="status">
-All done. Fresh start!
+          <p className="mt-2 text-sm text-muted-foreground" role="status">
+            All done. Fresh start!
           </p>
         )}
         {state === "error" && error && (
-          <p className="screen-subtitle reset-status reset-status-error" role="status">
+          <p className="mt-2 text-sm text-destructive" role="status">
             {error}
           </p>
         )}

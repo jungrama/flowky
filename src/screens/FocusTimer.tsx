@@ -1,5 +1,12 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import CatMascot from "../components/CatMascot";
+import TaskDrawer from "../components/TaskDrawer";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import { useSessions } from "../hooks/useSessions";
 import { formatDuration } from "../lib/sessionStats";
 import {
@@ -12,6 +19,7 @@ import type { SessionContext } from "../types/navigation";
 interface FocusTimerProps {
   active: boolean;
   session: SessionContext;
+  initialTask?: string;
   remainingSeconds: number;
   isPaused: boolean;
   onStart: (s: { task: string; depth: Depth; plannedSeconds: number }) => void;
@@ -117,7 +125,12 @@ export function RulerPicker({
 
   return (
     <div
-      className={`ft-ruler${readOnly ? " ft-ruler-static" : ""}`}
+      className={cn(
+        "relative h-[62px] w-full touch-none select-none overflow-hidden border-y border-border",
+        "before:pointer-events-none before:absolute before:inset-y-0 before:left-0 before:z-[2] before:w-12 before:bg-gradient-to-r before:from-background before:to-transparent",
+        "after:pointer-events-none after:absolute after:inset-y-0 after:right-0 after:z-[2] after:w-12 after:bg-gradient-to-l after:from-background after:to-transparent",
+        readOnly ? "cursor-default" : "cursor-grab active:cursor-grabbing",
+      )}
       ref={ref}
       onPointerDown={onDown}
       onPointerMove={onMove}
@@ -125,28 +138,38 @@ export function RulerPicker({
       onPointerLeave={onUp}
     >
       <div
-        className="ft-ruler-track"
+        className="absolute left-0 top-[26px] h-[22px] will-change-transform"
         style={{ transform: `translateX(${offset}px)` }}
       >
         {ticks.map((m) => {
-          const cls =
-            m % 15 === 0
-              ? "ft-tk ft-tk-major"
-              : m % 5 === 0
-                ? "ft-tk ft-tk-mid"
-                : "ft-tk";
+          const major = m % 15 === 0;
+          const mid = !major && m % 5 === 0;
           return (
             <span
               key={m}
-              className={cls}
+              className={cn(
+                "absolute w-px",
+                major
+                  ? "top-0.5 h-4 bg-foreground"
+                  : mid
+                    ? "top-[5px] h-[11px] bg-muted-foreground"
+                    : "top-2 h-2 bg-border",
+              )}
               style={{ left: `${m * PX_PER_MIN}px` }}
             >
-              {m % 15 === 0 && <span className="ft-tk-label">{m}</span>}
+              {major && (
+                <span className="absolute bottom-[18px] left-1/2 -translate-x-1/2 text-xs tabular-nums text-muted-foreground">
+                  {m}
+                </span>
+              )}
             </span>
           );
         })}
       </div>
-      <div className="ft-ruler-arrow" aria-hidden />
+      <div
+        className="absolute bottom-2 left-1/2 z-[3] h-0 w-0 -translate-x-1/2 border-x-[7px] border-b-[9px] border-x-transparent border-b-primary"
+        aria-hidden
+      />
     </div>
   );
 }
@@ -154,6 +177,7 @@ export function RulerPicker({
 export default function FocusTimer({
   active,
   session,
+  initialTask = "",
   remainingSeconds,
   isPaused,
   onStart,
@@ -165,7 +189,7 @@ export default function FocusTimer({
   onBack,
 }: FocusTimerProps) {
   const { loadSessions, suggestLength } = useSessions();
-  const [task, setTask] = useState("");
+  const [task, setTask] = useState(initialTask);
   const [depth, setDepth] = useState<Depth>("deep");
   const [durationSec, setDurationSec] = useState(25 * 60);
   const [editing, setEditing] = useState(false);
@@ -240,29 +264,34 @@ export default function FocusTimer({
     });
   };
 
+  const eyebrow =
+    "text-[10px] uppercase tracking-[0.16em] text-muted-foreground";
+  const badge =
+    "rounded-md bg-primary/[0.18] px-[9px] py-[3px] text-[11px] font-semibold uppercase tracking-[0.06em] text-primary";
+
   return (
     <section
-      className="focus-timer"
+      className="flex min-h-[min(600px,100vh)] w-full flex-col gap-6 text-left text-foreground"
       data-screen={active ? "activeSession" : "taskSetup"}
     >
-      <header className="ft-toprow">
+      <header className="flex items-center gap-2">
         {!active && (
           <button
             type="button"
-            className="ft-back"
+            className="inline-flex size-8 items-center justify-center rounded-[9px] text-[26px] leading-none text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
             onClick={onBack}
             aria-label="Back"
           >
             ‹
           </button>
         )}
-        <span className="ft-spacer" />
+        <span className="flex-1" />
         {active ? (
-          <span className="ft-badge">{session.depth}</span>
+          <span className={badge}>{session.depth}</span>
         ) : (
           <button
             type="button"
-            className="ft-badge ft-badge-btn"
+            className={cn(badge, "cursor-pointer")}
             onClick={() =>
               setDepth(DEPTHS[(DEPTHS.indexOf(depth) + 1) % DEPTHS.length])
             }
@@ -274,15 +303,20 @@ export default function FocusTimer({
       </header>
 
       <div>
-        <div className="ft-goal-row">
-          <div className="ft-goal">
-            <span className="ft-eyebrow">Session goal</span>
-            <span className="ft-goal-value">
+        <div className="flex items-center justify-between gap-2">
+          <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+            <span className={eyebrow}>Session goal</span>
+            <span className="text-xl font-semibold">
               {formatDuration(goalDone)}{" "}
-              <span className="ft-goal-of">/ {formatDuration(goalTarget)}</span>
+              <span className="text-base font-normal text-muted-foreground">
+                / {formatDuration(goalTarget)}
+              </span>
             </span>
-            <div className="ft-goal-bar">
-              <div className="ft-goal-fill" style={{ width: `${goalPct}%` }} />
+            <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-border">
+              <div
+                className="h-full rounded-full bg-primary transition-[width] duration-[400ms]"
+                style={{ width: `${goalPct}%` }}
+              />
             </div>
           </div>
           <CatMascot started={active} />
@@ -300,10 +334,10 @@ export default function FocusTimer({
         />
       </div>
 
-      <div className="ft-clock">
+      <div className="mt-2 flex flex-col items-center gap-1">
         {editing && !active ? (
           <input
-            className="ft-time ft-time-input"
+            className="w-[6.5ch] border-0 border-b-2 border-primary bg-transparent py-0.5 text-center font-mono text-[3.4rem] font-medium leading-none tracking-[0.04em] text-foreground outline-none"
             type="text"
             inputMode="numeric"
             defaultValue={mmss(durationSec)}
@@ -320,7 +354,7 @@ export default function FocusTimer({
         ) : (
           <button
             type="button"
-            className="ft-time ft-time-btn"
+            className="rounded-[10px] px-2 py-0.5 font-mono text-[3.4rem] font-medium leading-none tracking-[0.04em] text-foreground transition-colors enabled:hover:bg-muted disabled:cursor-default"
             onClick={() => !active && setEditing(true)}
             disabled={active}
             title={active ? undefined : "Tap to set your time"}
@@ -328,31 +362,40 @@ export default function FocusTimer({
             {mmss(displaySeconds)}
           </button>
         )}
-        <span className="ft-range">
+        <span className="text-sm tabular-nums text-muted-foreground">
           {clock(startUnix)} → {clock(endUnix)}
         </span>
       </div>
 
       {!active ? (
-        <input
-          className="ft-name"
-          type="text"
-          placeholder="What are you working on?"
-          value={task}
-          onChange={(e) => setTask(e.target.value)}
-        />
+        <TaskDrawer onPick={(title) => setTask(title)}>
+          <button
+            type="button"
+            className={cn(
+              "w-full max-w-[240px] self-center border-0 border-b border-border bg-transparent py-1.5 text-center text-sm outline-none focus:border-primary",
+              task ? "text-foreground" : "text-muted-foreground",
+            )}
+          >
+            {task || "What are you working on?"}
+          </button>
+        </TaskDrawer>
       ) : (
-        <p className="ft-name ft-name-static">{session.task}</p>
+        <p className="m-0 self-center text-sm text-muted-foreground">
+          {session.task}
+        </p>
       )}
 
       {active && distractions.length > 0 && (
-        <div className="ft-distractions">
-          <span className="ft-eyebrow">Distractions</span>
-          <ul className="ft-distractions-list">
+        <div className="flex w-full max-w-[260px] flex-col gap-1 self-center">
+          <span className={eyebrow}>Distractions</span>
+          <ul className="flex flex-col gap-1">
             {distractions.map((d) => (
-              <li key={d.app} className="ft-distractions-row">
-                <span className="ft-distractions-app">{d.app}</span>
-                <span className="ft-distractions-time">
+              <li
+                key={d.app}
+                className="flex justify-between gap-4 text-sm text-foreground"
+              >
+                <span>{d.app}</span>
+                <span className="tabular-nums text-foreground">
                   {minSec(d.seconds)}
                 </span>
               </li>
@@ -361,34 +404,51 @@ export default function FocusTimer({
         </div>
       )}
 
-      <div className="ft-controls">
-        <button
-          type="button"
-          className="ft-btn ft-btn-side"
-          onClick={active ? onEndEarly : onCancel}
-          aria-label={active ? "End session" : "Cancel"}
-        >
-          ✕
-        </button>
-        <button
-          type="button"
-          className="ft-btn ft-btn-primary"
-          onClick={active ? (isPaused ? onResume : onPause) : start}
-          aria-label={
-            active ? (isPaused ? "Resume" : "Pause") : "Start session"
-          }
-        >
-          {active ? (isPaused ? "▶" : "❚❚") : "▶"}
-        </button>
-        <button
-          type="button"
-          className="ft-btn ft-btn-side"
-          onClick={active ? onExtend : undefined}
-          disabled={!active}
-          aria-label="Extend 10 minutes"
-        >
-          ＋
-        </button>
+      <div className="mt-auto flex items-center justify-center gap-6 pt-4">
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex size-12 items-center justify-center rounded-full bg-muted text-base text-muted-foreground transition enabled:hover:-translate-y-px enabled:hover:text-foreground disabled:cursor-default disabled:opacity-40"
+              onClick={active ? onEndEarly : onCancel}
+              aria-label={active ? "End session" : "Cancel"}
+            >
+              ✕
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>{active ? "End session" : "Cancel"}</TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex size-16 items-center justify-center rounded-full bg-primary text-[22px] text-primary-foreground shadow-[0_8px_22px_rgba(17,17,17,0.28)] transition hover:-translate-y-0.5"
+              onClick={active ? (isPaused ? onResume : onPause) : start}
+              aria-label={
+                active ? (isPaused ? "Resume" : "Pause") : "Start session"
+              }
+            >
+              {active ? (isPaused ? "▶" : "❚❚") : "▶"}
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>
+            {active ? (isPaused ? "Resume" : "Pause") : "Start session"}
+          </TooltipContent>
+        </Tooltip>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <button
+              type="button"
+              className="inline-flex size-12 items-center justify-center rounded-full bg-muted text-base text-muted-foreground transition enabled:hover:-translate-y-px enabled:hover:text-foreground disabled:cursor-default disabled:opacity-40"
+              onClick={active ? onExtend : undefined}
+              disabled={!active}
+              aria-label="Extend 10 minutes"
+            >
+              ＋
+            </button>
+          </TooltipTrigger>
+          <TooltipContent>Add 10 minutes</TooltipContent>
+        </Tooltip>
       </div>
     </section>
   );

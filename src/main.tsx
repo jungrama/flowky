@@ -1,11 +1,12 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import App from "./App";
 import { initTheme } from "./lib/theme";
 import Nudge from "./screens/Nudge";
 import Popover from "./screens/Popover";
-import "./styles/globals.css";
+import "./styles/app.css";
 
 initTheme();
 
@@ -35,6 +36,8 @@ function Root() {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <Root />
+    <TooltipProvider delayDuration={200}>
+      <Root />
+    </TooltipProvider>
   </StrictMode>,
 );

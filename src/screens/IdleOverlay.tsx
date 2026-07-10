@@ -1,4 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
 import AvatarFace from "../components/AvatarFace";
 import {
   IDLE_ABANDON_SECONDS,
@@ -49,41 +52,53 @@ export default function IdleOverlay({
   const showBreakSuggestion = idleSeconds >= IDLE_BREAK_SUGGEST_SECONDS;
 
   return (
-    <div className="idle-overlay" data-screen="idleOverlay" role="dialog" aria-modal>
-      <div className="idle-overlay-panel">
-        <div className="idle-pulse-ring" aria-hidden>
-          <div className="idle-pulse-ring-inner" />
-          <AvatarFace emotion="surprised" size={48} className="idle-face" />
+    <div
+      className="fixed inset-0 z-20 flex items-center justify-center bg-black/70 p-8"
+      data-screen="idleOverlay"
+      role="dialog"
+      aria-modal
+    >
+      <Card className="w-full max-w-xs gap-0 px-6 text-center">
+        <div className="relative mx-auto mb-6 size-[72px]" aria-hidden>
+          <div className="absolute inset-0 rounded-full border-[3px] border-primary animate-idle-pulse" />
+          <AvatarFace
+            emotion="surprised"
+            size={48}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2"
+          />
         </div>
 
-        <h2>Still there?</h2>
-        <p className="screen-subtitle">Your session is still running.</p>
+        <h2 className="text-2xl font-normal leading-[1.2] tracking-[-0.03em]">
+          Still there?
+        </h2>
+        <p className="mt-2 text-sm text-muted-foreground">
+          Your session is still running.
+        </p>
 
         {showBreakSuggestion && (
-          <p className="idle-break-hint">
+          <p className="mt-2 text-sm font-medium leading-normal text-foreground">
             You&apos;ve been away a while — no shame in logging a break when you&apos;re back.
           </p>
         )}
 
-        <div className="idle-countdown-bar" aria-label={`Auto-ending in ${countdown} seconds`}>
-          <div
-            className="idle-countdown-bar-fill"
-            style={{ transform: `scaleX(${progress})` }}
-          />
-        </div>
-        <p className="idle-countdown-label">
+        <Progress
+          className="mt-6"
+          value={progress * 100}
+          aria-label={`Auto-ending in ${countdown} seconds`}
+        />
+        <p className="mt-1 text-xs text-muted-foreground">
           Ending in {countdown}s if you&apos;re still away
         </p>
 
-        <div className="screen-actions">
-          <button type="button" className="btn btn-primary" onClick={onDismiss}>
+        <div className="mt-6 flex w-full flex-col gap-2">
+          <Button type="button" onClick={onDismiss}>
             I&apos;m back, keep going
-          </button>
-          <button type="button" className="btn btn-ghost" onClick={onEnd}>
+          </Button>
+          <Button type="button" variant="ghost" onClick={onEnd}>
             End session
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }

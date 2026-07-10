@@ -1,4 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   getPermissionStatus,
   openSystemSettings,
@@ -9,16 +11,16 @@ import {
 
 const isMac = navigator.userAgent.includes("Mac");
 
-function statusDot(state: string): { className: string; label: string } {
+function statusLabel(state: string): string {
   switch (state) {
     case "granted":
-      return { className: "perm-dot-ok", label: "Granted" };
+      return "Granted";
     case "denied":
-      return { className: "perm-dot-bad", label: "Not granted" };
+      return "Not granted";
     case "unsupported":
-      return { className: "perm-dot-ok", label: "Not required" };
+      return "Not required";
     default:
-      return { className: "perm-dot-unknown", label: "Unknown" };
+      return "Unknown";
   }
 }
 
@@ -54,82 +56,82 @@ export default function PermissionsPanel() {
 
   if (!status) return null;
 
-  const screen = statusDot(status.screen_recording);
   const screenGranted = status.screen_recording === "granted";
 
   return (
-    <div className="perm-panel">
-      <div className="perm-header">
-        <p className="form-label">Permissions</p>
-        <button
-          type="button"
-          className="btn btn-ghost btn-sm perm-recheck"
-          onClick={refresh}
-        >
+    <div className="flex flex-col gap-3 rounded-lg border bg-card p-4">
+      <div className="flex items-center justify-between">
+        <p className="text-sm font-medium text-muted-foreground">Permissions</p>
+        <Button type="button" size="sm" variant="ghost" onClick={refresh}>
           Re-check
-        </button>
+        </Button>
       </div>
 
-      <div className="perm-row">
-        <div className="perm-row-head">
-          <span className={`perm-dot ${screen.className}`} aria-hidden />
-          <span className="perm-name">Distraction detection</span>
-          <span className={`perm-badge ${screen.className}`}>{screen.label}</span>
+      <div className="flex flex-col gap-2 border-t pt-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">
+            Distraction detection
+          </span>
+          <Badge variant="secondary">
+            {statusLabel(status.screen_recording)}
+          </Badge>
         </div>
-        <span className="perm-status">
-          {isMac ? "Needs Screen Recording access to spot distractions." : "No permission needed."}
+        <span className="text-xs text-muted-foreground">
+          {isMac
+            ? "Needs Screen Recording access to spot distractions."
+            : "No permission needed."}
         </span>
         {isMac && (
-          <div className="perm-actions">
-            {!screenGranted && (
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
-                onClick={() => void grantScreen()}
-              >
-                Grant
-              </button>
-            )}
-            <button
+          <div className="flex gap-2">
+            <Button
               type="button"
-              className="btn btn-ghost btn-sm"
+              size="sm"
+              variant="ghost"
               onClick={() => void openSystemSettings("screen-recording")}
             >
               Open settings
-            </button>
+            </Button>
+            {!screenGranted && (
+              <Button type="button" size="sm" onClick={() => void grantScreen()}>
+                Grant
+              </Button>
+            )}
           </div>
         )}
       </div>
 
-      <div className="perm-row">
-        <div className="perm-row-head">
-          <span className="perm-dot perm-dot-unknown" aria-hidden />
-          <span className="perm-name">Notifications</span>
-          <span className="perm-badge perm-dot-unknown">Managed by the OS</span>
+      <div className="flex flex-col gap-2 border-t pt-3">
+        <div className="flex items-center gap-2">
+          <span className="text-sm font-medium text-foreground">
+            Notifications
+          </span>
+          <Badge variant="secondary">Managed by the OS</Badge>
         </div>
-        <span className="perm-status">
+        <span className="text-xs text-muted-foreground">
           Send a test to make sure alerts reach you.
         </span>
-        <div className="perm-actions">
-          <button
-            type="button"
-            className="btn btn-secondary btn-sm"
-            onClick={() => void test()}
-          >
-            Send a test
-          </button>
+        <div className="flex gap-2">
           {isMac && (
-            <button
+            <Button
               type="button"
-              className="btn btn-ghost btn-sm"
+              size="sm"
+              variant="ghost"
               onClick={() => void openSystemSettings("notifications")}
             >
               Open settings
-            </button>
+            </Button>
           )}
+          <Button
+            type="button"
+            size="sm"
+            variant="secondary"
+            onClick={() => void test()}
+          >
+            Send a test
+          </Button>
         </div>
         {testMsg && (
-          <p className="screen-subtitle perm-test-msg" role="status">
+          <p className="text-sm text-muted-foreground" role="status">
             {testMsg}
           </p>
         )}

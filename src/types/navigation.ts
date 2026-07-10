@@ -2,6 +2,7 @@ import type { Depth, InterruptionInput } from "../lib/tauri";
 
 export type Screen =
   | "home"
+  | "tasks"
   | "taskSetup"
   | "activeSession"
   | "interruptLog"

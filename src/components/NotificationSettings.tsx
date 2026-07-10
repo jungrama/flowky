@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
 import {
   getIdleReminders,
   getSessionNotifications,
@@ -21,33 +22,43 @@ export default function NotificationSettings() {
   };
 
   return (
-    <div className="settings-group">
-      <label className="settings-toggle">
-        <input
-          type="checkbox"
-          checked={sessionNotifs}
-          onChange={(e) => toggleSession(e.target.checked)}
-        />
-        <span className="settings-toggle-text">
-          <span className="settings-toggle-title">Session notifications</span>
-          <span className="settings-toggle-hint">
+    <div className="flex w-full flex-col gap-2">
+      <label
+        htmlFor="notif-session"
+        className="flex items-start justify-between gap-2 rounded-lg border bg-card p-4"
+      >
+        <span className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-foreground">
+            Session notifications
+          </span>
+          <span className="text-xs leading-snug text-muted-foreground">
             A little desktop ping when a session finishes.
           </span>
         </span>
+        <Switch
+          id="notif-session"
+          checked={sessionNotifs}
+          onCheckedChange={toggleSession}
+        />
       </label>
 
-      <label className="settings-toggle">
-        <input
-          type="checkbox"
-          checked={idleReminders}
-          onChange={(e) => toggleIdle(e.target.checked)}
-        />
-        <span className="settings-toggle-text">
-          <span className="settings-toggle-title">Idle check-in</span>
-          <span className="settings-toggle-hint">
+      <label
+        htmlFor="notif-idle"
+        className="flex items-start justify-between gap-2 rounded-lg border bg-card p-4"
+      >
+        <span className="flex flex-col gap-0.5">
+          <span className="text-sm font-medium text-foreground">
+            Idle check-in
+          </span>
+          <span className="text-xs leading-snug text-muted-foreground">
             Pop the &ldquo;still there?&rdquo; overlay after 5 minutes away.
           </span>
         </span>
+        <Switch
+          id="notif-idle"
+          checked={idleReminders}
+          onCheckedChange={toggleIdle}
+        />
       </label>
     </div>
   );

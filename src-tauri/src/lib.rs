@@ -5,10 +5,9 @@ mod scorer;
 mod watcher;
 
 use db::{
-    get_all_sessions, get_app_activity, get_app_rules, get_interruption_breakdown,
-    get_session_app_activity, get_sessions,
-    get_site_rules, init_db, reset_data, save_app_activity, save_session, set_app_rule,
-    set_site_rule,
+    add_task, delete_task, get_all_sessions, get_app_activity, get_app_rules,
+    get_interruption_breakdown, get_session_app_activity, get_sessions, get_site_rules, get_tasks,
+    init_db, reset_data, save_app_activity, save_session, set_app_rule, set_site_rule, update_task,
 };
 use notifications::{
     get_tray_session, open_main_window, send_notification, set_tray_state, setup_tray,
@@ -91,6 +90,10 @@ pub fn run() {
             request_screen_recording,
             open_system_settings,
             send_test_notification,
+            get_tasks,
+            add_task,
+            update_task,
+            delete_task,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

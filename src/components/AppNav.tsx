@@ -14,9 +14,13 @@ interface AppNavProps {
 
 const TABS: { screen: Screen; label: string }[] = [
   { screen: "home", label: "Home" },
+  { screen: "tasks", label: "Tasks" },
   { screen: "dailyReview", label: "Today" },
   { screen: "calendarHeatmap", label: "Calendar" },
 ];
+
+const NAV_TAB_CLASS =
+  "relative -mb-px cursor-pointer border-b-2 border-transparent px-0 pt-2 pb-[9px] text-sm font-medium text-muted-foreground transition-colors hover:text-foreground data-[active=true]:border-primary data-[active=true]:text-foreground";
 
 export default function AppNav({
   screen,
@@ -26,15 +30,15 @@ export default function AppNav({
 }: AppNavProps) {
   const inSettings = screen === "settings";
   return (
-    <header className="app-nav">
-      <div className="app-nav-bar">
+    <header className="sticky top-0 z-[5] border-b bg-background">
+      <div className="flex h-14 items-center justify-between px-4">
         <button
           type="button"
-          className="app-nav-brand"
+          className="flex cursor-pointer items-center gap-2 p-0 text-xl font-medium tracking-[-0.03em] text-foreground"
           onClick={() => onNavigate("home")}
         >
           <img
-            className="app-nav-logo"
+            className="flex-none"
             src={brandIcon}
             width="22"
             height="22"
@@ -45,7 +49,7 @@ export default function AppNav({
         </button>
         <button
           type="button"
-          className="app-nav-gear"
+          className="flex h-8 w-8 cursor-pointer items-center justify-center rounded-md text-[1.1rem] leading-none text-muted-foreground transition-colors hover:bg-muted hover:text-foreground data-[active=true]:bg-muted data-[active=true]:text-foreground"
           aria-label="Settings"
           data-active={inSettings}
           onClick={() => onNavigate("settings")}
@@ -54,12 +58,12 @@ export default function AppNav({
         </button>
       </div>
       {inSettings ? (
-        <nav className="app-nav-tabs" aria-label="Settings sections">
+        <nav className="flex gap-6 px-4" aria-label="Settings sections">
           {SETTINGS_TABS.map((tab) => (
             <button
               key={tab.id}
               type="button"
-              className="app-nav-tab"
+              className={NAV_TAB_CLASS}
               data-active={settingsTab === tab.id}
               onClick={() => onSettingsTab(tab.id)}
             >
@@ -68,12 +72,12 @@ export default function AppNav({
           ))}
         </nav>
       ) : (
-        <nav className="app-nav-tabs" aria-label="Main">
+        <nav className="flex gap-6 px-4" aria-label="Main">
           {TABS.map((tab) => (
             <button
               key={tab.screen}
               type="button"
-              className="app-nav-tab"
+              className={NAV_TAB_CLASS}
               data-active={screen === tab.screen}
               onClick={() => onNavigate(tab.screen)}
             >

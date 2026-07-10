@@ -27,6 +27,7 @@ import Home from "./screens/Home";
 import IdleOverlay from "./screens/IdleOverlay";
 import InterruptLog from "./screens/InterruptLog";
 import Settings from "./screens/Settings";
+import Tasks from "./screens/Tasks";
 import WeeklySummary from "./screens/WeeklySummary";
 import {
   INITIAL_SESSION,
@@ -52,6 +53,7 @@ export default function App() {
   const [idleDismissed, setIdleDismissed] = useState(false);
   const [breakState, setBreakState] = useState<BreakState | null>(null);
   const [interruptInitialType, setInterruptInitialType] = useState<string | null>(null);
+  const [pendingTask, setPendingTask] = useState("");
 
   const timer = useTimer();
   const { loadSessions, saveSession } = useSessions();
@@ -350,6 +352,7 @@ export default function App() {
 
   const HUB_SCREENS: Screen[] = [
     "home",
+    "tasks",
     "dailyReview",
     "weeklySummary",
     "calendarHeatmap",
@@ -359,7 +362,7 @@ export default function App() {
   const showNav = HUB_SCREENS.includes(screen);
 
   return (
-    <div className="app-layout">
+    <div className="flex min-h-screen flex-col">
       {showNav && (
         <AppNav
           screen={screen}
@@ -369,15 +372,33 @@ export default function App() {
         />
       )}
 
-      <main className={`app-content${showNav ? "" : " app-content-centered"}`}>
+      <main
+        className={`flex flex-1 flex-col items-center overflow-y-auto p-3${showNav ? "" : " justify-center text-center"}`}
+      >
         {screen === "home" && (
-          <Home onStartSession={() => setScreen("taskSetup")} />
+          <Home
+            onStartSession={() => {
+              setPendingTask("");
+              setScreen("taskSetup");
+            }}
+            onOpenTasks={() => setScreen("tasks")}
+          />
+        )}
+
+        {screen === "tasks" && (
+          <Tasks
+            onStartWith={(title) => {
+              setPendingTask(title);
+              setScreen("taskSetup");
+            }}
+          />
         )}
 
         {(screen === "taskSetup" || screen === "activeSession") && (
           <FocusTimer
             active={screen === "activeSession"}
             session={session}
+            initialTask={pendingTask}
             remainingSeconds={timer.remainingSeconds}
             isPaused={timer.isPaused}
             onStart={startSession}

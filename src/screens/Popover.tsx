@@ -1,5 +1,12 @@
 import { emit, listen } from "@tauri-apps/api/event";
 import { useEffect, useMemo, useState } from "react";
+import { Button } from "@/components/ui/button";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import { cn } from "@/lib/utils";
 import CatMascot from "../components/CatMascot";
 import { formatDuration } from "../lib/sessionStats";
 import {
@@ -71,6 +78,10 @@ function clock(unixSeconds: number): string {
   });
 }
 
+const eyebrow = "text-[10px] uppercase tracking-[0.16em] text-muted-foreground";
+const sideBtn =
+  "inline-flex size-12 items-center justify-center rounded-full bg-muted text-base text-muted-foreground transition hover:-translate-y-px hover:text-foreground";
+
 export default function Popover() {
   const [session, setSession] = useState<TraySession>(EMPTY);
   const [now, setNow] = useState(() => Math.floor(Date.now() / 1000));
@@ -93,7 +104,10 @@ export default function Popover() {
     void listen<string>("app-distraction", (e) => {
       setDistractApp(e.payload);
       window.clearTimeout(clearTimer);
-      clearTimer = window.setTimeout(() => setDistractApp(null), DISTRACT_CLEAR_MS);
+      clearTimer = window.setTimeout(
+        () => setDistractApp(null),
+        DISTRACT_CLEAR_MS,
+      );
     }).then((fn) => {
       unlistenDistract = fn;
     });
@@ -109,7 +123,10 @@ export default function Popover() {
   useEffect(() => {
     if (session.status !== "running" || session.ends_at == null) return;
     setNow(Math.floor(Date.now() / 1000));
-    const id = window.setInterval(() => setNow(Math.floor(Date.now() / 1000)), 1000);
+    const id = window.setInterval(
+      () => setNow(Math.floor(Date.now() / 1000)),
+      1000,
+    );
     return () => window.clearInterval(id);
   }, [session.status, session.ends_at]);
 
@@ -153,106 +170,153 @@ export default function Popover() {
   const emptyCopy = EMPTY_COPY[session.status] ?? EMPTY_COPY.idle;
 
   return (
-    <div className="popover ft-scope">
+    <div className="m-1 flex max-h-[calc(100vh-0.5rem)] min-h-[calc(100vh-0.5rem)] flex-col items-center gap-3 overflow-y-auto rounded-xl border border-input bg-card p-4 text-left text-foreground">
       {active ? (
         <>
-          <header className="ft-toprow">
-            <span className="ft-spacer" />
-            <span className="ft-badge">{session.depth}</span>
+          <header className="flex w-full items-center gap-2">
+            <span className="flex-1" />
+            <span className="rounded-md bg-primary/[0.18] px-[9px] py-[3px] text-[11px] font-semibold uppercase tracking-[0.06em] text-primary">
+              {session.depth}
+            </span>
           </header>
 
-          <div className="ft-goal-row">
-            <div className="ft-goal">
-              <span className="ft-eyebrow">Goal</span>
-              <span className="ft-goal-value">
-                {formatDuration(elapsed)}{" "}
-                <span className="ft-goal-of">/ {formatDuration(planned)}</span>
-              </span>
-              <div className="ft-goal-bar">
-                <div className="ft-goal-fill" style={{ width: `${goalPct}%` }} />
+          <div className="w-full">
+            <div className="flex w-full items-center justify-between gap-2">
+              <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+                <span className={eyebrow}>Session goal</span>
+                <span className="text-xl font-semibold">
+                  {formatDuration(elapsed)}{" "}
+                  <span className="text-base font-normal text-muted-foreground">
+                    / {formatDuration(planned)}
+                  </span>
+                </span>
+                <div className="mt-0.5 h-1 overflow-hidden rounded-full bg-border">
+                  <div
+                    className="h-full rounded-full bg-primary transition-[width] duration-[400ms]"
+                    style={{ width: `${goalPct}%` }}
+                  />
+                </div>
               </div>
+              <CatMascot started className="w-[96px]" />
             </div>
-            <CatMascot started />
+
+            <RulerPicker
+              minutes={remaining / 60}
+              readOnly
+              onChange={() => {}}
+            />
           </div>
 
-          <RulerPicker minutes={remaining / 60} readOnly onChange={() => {}} />
-
-          <div className="ft-clock">
-            <span className="ft-time">{mmss(remaining)}</span>
-            <span className="ft-range">
-              {clock(session.started_at)} → {clock(session.started_at + planned)}
+          <div className="flex flex-col items-center gap-1">
+            <span className="font-mono text-[3rem] font-medium leading-none tracking-[0.04em] text-foreground">
+              {mmss(remaining)}
+            </span>
+            <span className="text-sm tabular-nums text-muted-foreground">
+              {clock(session.started_at)} →{" "}
+              {clock(session.started_at + planned)}
             </span>
           </div>
 
-          <p className="ft-name ft-name-static">{session.task}</p>
+          <p className="m-0 self-center text-sm text-muted-foreground">
+            {session.task}
+          </p>
 
-          <div className="ft-controls">
-            <button
-              type="button"
-              className="ft-btn ft-btn-side"
-              onClick={() => sendAction("end")}
-              aria-label="End session"
-            >
-              ✕
-            </button>
-            <button
-              type="button"
-              className="ft-btn ft-btn-primary"
-              onClick={() => sendAction(isPaused ? "resume" : "pause")}
-              aria-label={isPaused ? "Resume" : "Pause"}
-            >
-              {isPaused ? "▶" : "❚❚"}
-            </button>
-            <button
-              type="button"
-              className="ft-btn ft-btn-side"
-              onClick={() => sendAction("extend")}
-              aria-label="Extend 10 minutes"
-            >
-              ＋
-            </button>
+          <div className="flex items-center justify-center gap-6">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className={sideBtn}
+                  onClick={() => sendAction("end")}
+                  aria-label="End session"
+                >
+                  ✕
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>End session</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className="inline-flex size-16 items-center justify-center rounded-full bg-primary text-[22px] text-primary-foreground shadow-[0_8px_22px_rgba(17,17,17,0.28)] transition hover:-translate-y-0.5"
+                  onClick={() => sendAction(isPaused ? "resume" : "pause")}
+                  aria-label={isPaused ? "Resume" : "Pause"}
+                >
+                  {isPaused ? "▶" : "❚❚"}
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>{isPaused ? "Resume" : "Pause"}</TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  type="button"
+                  className={sideBtn}
+                  onClick={() => sendAction("extend")}
+                  aria-label="Extend 10 minutes"
+                >
+                  ＋
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>Add 10 minutes</TooltipContent>
+            </Tooltip>
           </div>
 
           {distractions.length > 0 ? (
-            <div className="ft-distractions">
-              <span className="ft-eyebrow">Distractions</span>
-              <ul className="ft-distractions-list">
+            <div className="flex w-full max-w-[260px] flex-col gap-1 self-center">
+              <span className={eyebrow}>Distractions</span>
+              <ul className="flex flex-col gap-1">
                 {distractions.map((d) => (
-                  <li key={d.app} className="ft-distractions-row">
-                    <span className="ft-distractions-app">{d.app}</span>
-                    <span className="ft-distractions-time">{minSec(d.seconds)}</span>
+                  <li
+                    key={d.app}
+                    className="flex justify-between gap-4 text-sm text-foreground"
+                  >
+                    <span>{d.app}</span>
+                    <span className="tabular-nums text-foreground">
+                      {minSec(d.seconds)}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
           ) : (
-            <p className={`ft-distract-status${distractApp ? " is-on" : ""}`}>
+            <p
+              className={cn(
+                "m-0 self-center text-center text-xs text-muted-foreground",
+                distractApp && "font-medium text-foreground",
+              )}
+            >
               {distractApp
                 ? `${distractApp} pulled you in`
                 : "No distractions so far — nice one!"}
             </p>
           )}
 
-          <button
+          <Button
             type="button"
-            className="popover-open-btn"
+            className="mt-auto w-full"
             onClick={() => void openMainWindow()}
           >
             Open app
-          </button>
+          </Button>
         </>
       ) : (
-        <div className="popover-empty">
+        <div className="flex w-full flex-1 flex-col items-center justify-center gap-2 py-6">
           <CatMascot />
-          <h3 className="popover-empty-title">{emptyCopy.title}</h3>
-          <p className="popover-empty-subtitle">{emptyCopy.subtitle}</p>
-          <button
+          <h3 className="m-0 text-xl font-semibold text-foreground">
+            {emptyCopy.title}
+          </h3>
+          <p className="m-0 max-w-[24ch] text-center text-sm leading-snug text-muted-foreground">
+            {emptyCopy.subtitle}
+          </p>
+          <Button
             type="button"
-            className="popover-open-btn"
+            className="mt-4 w-full"
             onClick={() => void openMainWindow()}
           >
             Open app
-          </button>
+          </Button>
         </div>
       )}
     </div>

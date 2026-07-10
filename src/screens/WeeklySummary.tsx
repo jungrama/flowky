@@ -1,8 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
 import InfoHint from "../components/InfoHint";
 import { useSessions } from "../hooks/useSessions";
 import { getInterruptCategoryLabel } from "../lib/interruptCategories";
-import { getInterruptionBreakdown, type InterruptionBreakdown } from "../lib/tauri";
+import {
+  getInterruptionBreakdown,
+  type InterruptionBreakdown,
+} from "../lib/tauri";
 import {
   avgInterruptionsPerSession,
   completedSessionCount,
@@ -11,8 +16,6 @@ import {
   deepFocusSeconds,
   formatDuration,
   last7Days,
-  scoreTone,
-  sessionDotTone,
   sessionsForDay,
   weekRangeLabel,
 } from "../lib/sessionStats";
@@ -26,10 +29,17 @@ interface DayScore {
   sessions: ReturnType<typeof sessionsForDay>;
 }
 
+const STAT_CARD_CLASS = "gap-1 rounded-lg px-2 py-4 shadow-none";
+const STAT_LABEL_CLASS =
+  "inline-flex items-center gap-[5px] text-xs text-muted-foreground";
+const STAT_VALUE_CLASS = "font-semibold text-foreground tabular-nums";
+
 export default function WeeklySummary(_props: WeeklySummaryProps) {
   const { sessions, loadSessions, computeScore } = useSessions();
   const [chartScores, setChartScores] = useState<DayScore[]>([]);
-  const [interruptBreakdown, setInterruptBreakdown] = useState<InterruptionBreakdown[]>([]);
+  const [interruptBreakdown, setInterruptBreakdown] = useState<
+    InterruptionBreakdown[]
+  >([]);
 
   useEffect(() => {
     void loadSessions(7);
@@ -55,7 +65,12 @@ export default function WeeklySummary(_props: WeeklySummaryProps) {
         days.map(async (date) => {
           const daySessions = sessionsForDay(sessions, date);
           if (daySessions.length === 0) {
-            return { date, label: dayLabel(date), score: null, sessions: daySessions };
+            return {
+              date,
+              label: dayLabel(date),
+              score: null,
+              sessions: daySessions,
+            };
           }
           const score = await computeScore(daySessions);
           return { date, label: dayLabel(date), score, sessions: daySessions };
@@ -103,27 +118,34 @@ export default function WeeklySummary(_props: WeeklySummaryProps) {
     };
   }, [chartScores]);
 
-  const maxChartScore = Math.max(
-    100,
-    ...chartScores.map((d) => d.score ?? 0),
-  );
+  const maxChartScore = Math.max(100, ...chartScores.map((d) => d.score ?? 0));
 
   return (
-    <section className="screen screen-review screen-weekly" data-screen="weeklySummary">
-      <h2>This week</h2>
-      <p className="screen-subtitle">{weekRangeLabel(days)}</p>
+    <section
+      className="flex w-full max-w-sm flex-col items-center gap-4"
+      data-screen="weeklySummary"
+    >
+      <h2 className="text-2xl font-normal tracking-[-0.03em]">This week</h2>
+      <p className="text-sm text-muted-foreground">{weekRangeLabel(days)}</p>
 
-      <div className="review-chart" aria-label="7-day focus scores">
-        <div className="review-chart-bars">
+      <Card
+        className="w-full rounded-lg p-4 shadow-none"
+        aria-label="7-day focus scores"
+      >
+        <div className="flex h-24 items-end justify-between gap-1">
           {chartScores.map((day) => {
             const height =
               day.score !== null ? (day.score / maxChartScore) * 100 : 4;
-            const barTone =
-              day.score !== null ? scoreTone(day.score) : "empty";
             return (
-              <div key={day.date.toISOString()} className="review-chart-col">
+              <div
+                key={day.date.toISOString()}
+                className="flex h-full flex-1 flex-col items-center gap-1"
+              >
                 <div
-                  className={`review-chart-bar review-chart-bar-${barTone}`}
+                  className={
+                    "mt-auto min-h-[4px] w-full max-w-[2rem] rounded-t-md transition-[height] duration-300 " +
+                    (day.score !== null ? "bg-foreground" : "bg-border")
+                  }
                   style={{ height: `${height}%` }}
                   title={
                     day.score !== null
@@ -131,59 +153,68 @@ export default function WeeklySummary(_props: WeeklySummaryProps) {
                       : `${day.label}: no sessions`
                   }
                 />
-                <span className="review-chart-label">{day.label}</span>
+                <span className="text-xs text-muted-foreground">
+                  {day.label}
+                </span>
               </div>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      <div className="home-stats">
-        <div className="stat-card">
-          <span className="stat-label">
+      <div className="grid w-full grid-cols-3 gap-2">
+        <Card className={STAT_CARD_CLASS}>
+          <span className={STAT_LABEL_CLASS}>
             Deep focus
             <InfoHint
               align="start"
               text="All the hours you spent focused this week. Nice work!"
             />
           </span>
-          <span className="stat-value stat-value-sm">
+          <span className={`${STAT_VALUE_CLASS} text-xl`}>
             {hasWeekData ? deepFocus : "—"}
           </span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">
+        </Card>
+        <Card className={STAT_CARD_CLASS}>
+          <span className={STAT_LABEL_CLASS}>
             Cleared
             <InfoHint text="Sessions you finished this week instead of stopping early." />
           </span>
-          <span className="stat-value">
+          <span className={`${STAT_VALUE_CLASS} text-2xl`}>
             {hasWeekData ? completed : "—"}
           </span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-label">
+        </Card>
+        <Card className={STAT_CARD_CLASS}>
+          <span className={STAT_LABEL_CLASS}>
             Avg interrupts
             <InfoHint
               align="end"
               text="How many distractions popped up each session this week — fewer is better."
             />
           </span>
-          <span className="stat-value">
+          <span className={`${STAT_VALUE_CLASS} text-2xl`}>
             {hasWeekData ? avgInterrupts.toFixed(1) : "—"}
           </span>
-        </div>
+        </Card>
       </div>
 
       {interruptBreakdown.length > 0 && (
-        <div className="weekly-interrupt-breakdown">
-          <p className="form-label">What pulled you away</p>
-          <ul className="weekly-interrupt-list">
+        <div className="w-full">
+          <p className="mb-2 text-sm font-medium text-muted-foreground">
+            What pulled you away
+          </p>
+          <ul className="flex flex-col gap-1">
             {interruptBreakdown.map((entry) => (
-              <li key={entry.interrupt_type} className="weekly-interrupt-item">
-                <span className="weekly-interrupt-label">
+              <li
+                key={entry.interrupt_type}
+                className="flex justify-between gap-2 rounded-md border bg-card px-3 py-2 text-sm"
+              >
+                <span className="text-foreground">
                   {getInterruptCategoryLabel(entry.interrupt_type)}
                 </span>
-                <span className="weekly-interrupt-count">{entry.count}</span>
+                <span className="tabular-nums text-muted-foreground">
+                  {entry.count}
+                </span>
               </li>
             ))}
           </ul>
@@ -191,65 +222,81 @@ export default function WeeklySummary(_props: WeeklySummaryProps) {
       )}
 
       {(bestDay || worstDay) && (
-        <div className="weekly-callouts">
+        <div className="grid w-full grid-cols-2 gap-2">
           {bestDay && (
-            <div className="weekly-callout weekly-callout-best">
-              <span className="weekly-callout-tag">Best day</span>
-              <span className="weekly-callout-text">
+            <Card className="gap-1 rounded-lg p-3 text-left shadow-none">
+              <span className="text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
+                Best day
+              </span>
+              <span className="text-sm text-foreground">
                 {dayInsight(bestDay.sessions, bestDay.date)}
               </span>
-            </div>
+            </Card>
           )}
           {worstDay && (
-            <div className="weekly-callout weekly-callout-worst">
-              <span className="weekly-callout-tag">Toughest day</span>
-              <span className="weekly-callout-text">
+            <Card className="gap-1 rounded-lg p-3 text-left shadow-none">
+              <span className="text-xs font-medium uppercase tracking-[0.04em] text-muted-foreground">
+                Toughest day
+              </span>
+              <span className="text-sm text-foreground">
                 {dayInsight(worstDay.sessions, worstDay.date)}
               </span>
-            </div>
+            </Card>
           )}
         </div>
       )}
 
-      <div className="review-sessions weekly-days">
-        <p className="form-label">Sessions by day</p>
+      <div className="w-full text-left">
+        <p className="text-sm font-medium text-muted-foreground">
+          Sessions by day
+        </p>
         {!hasWeekData ? (
-          <p className="screen-subtitle">No sessions logged yet — let's get started!</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            No sessions logged yet — let's get started!
+          </p>
         ) : (
-          <div className="weekly-day-list">
+          <div className="mt-2 flex flex-col gap-1">
             {[...chartScores].reverse().map((day) => {
               const dayHasSessions = day.sessions.length > 0;
               if (!dayHasSessions) return null;
 
               return (
-                <details key={day.date.toISOString()} className="weekly-day-details">
-                  <summary className="weekly-day-summary">
-                    <span className="weekly-day-label">{day.label}</span>
-                    <span className="weekly-day-meta">
+                <details
+                  key={day.date.toISOString()}
+                  className="rounded-lg border bg-card px-3 py-2"
+                >
+                  <summary className="flex cursor-pointer items-center justify-between gap-2 text-sm">
+                    <span className="font-medium text-foreground">
+                      {day.label}
+                    </span>
+                    <span className="flex items-center gap-2 text-muted-foreground">
                       {day.sessions.length} session
                       {day.sessions.length === 1 ? "" : "s"}
                       {day.score !== null && (
-                        <span
-                          className={`weekly-day-score weekly-day-score-${scoreTone(day.score)}`}
+                        <Badge
+                          variant="secondary"
+                          className="tabular-nums"
                         >
                           {Math.round(day.score)}
-                        </span>
+                        </Badge>
                       )}
                     </span>
                   </summary>
-                  <ul className="review-session-list">
+                  <ul className="mt-2 flex list-none flex-col gap-1">
                     {day.sessions.map((session) => (
                       <li
                         key={session.id ?? session.started_at}
-                        className="review-session-item"
+                        className="flex items-start gap-2 py-1"
                       >
                         <span
-                          className={`review-session-dot review-session-dot-${sessionDotTone(session)}`}
+                          className="mt-1.5 size-2 flex-none rounded-full bg-foreground"
                           aria-hidden="true"
                         />
-                        <div className="review-session-info">
-                          <span className="review-session-task">{session.task}</span>
-                          <span className="review-session-meta">
+                        <div className="flex min-w-0 flex-col">
+                          <span className="truncate text-sm text-foreground">
+                            {session.task}
+                          </span>
+                          <span className="text-xs text-muted-foreground">
                             {formatDuration(session.duration ?? 0)}
                             {session.interrupts > 0
                               ? ` · ${session.interrupts} interrupt${session.interrupts === 1 ? "" : "s"}`

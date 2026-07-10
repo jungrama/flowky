@@ -18,15 +18,16 @@ const COPY: Record<SettingsTab, string> = {
 
 export default function Settings({ tab }: SettingsProps) {
   return (
-    <section className="screen screen-settings" data-screen="settings">
-      <header className="settings-header">
-        <h2>Settings</h2>
-        <p className="screen-subtitle">{COPY[tab]}</p>
+    <section
+      className="flex w-full max-w-sm flex-col items-center gap-4"
+      data-screen="settings"
+    >
+      <header className="flex w-full flex-col gap-1 text-left">
+        <h2 className="text-2xl font-normal tracking-[-0.03em]">Settings</h2>
+        <p className="text-sm text-muted-foreground">{COPY[tab]}</p>
       </header>
 
-      {tab === "preferences" && (
-        <NameSettings />
-      )}
+      {tab === "preferences" && <NameSettings />}
 
       {tab === "notifications" && <NotificationSettings />}
 

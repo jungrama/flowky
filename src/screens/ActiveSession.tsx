@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 import type { SessionContext } from "../types/navigation";
 
 interface ActiveSessionProps {
@@ -43,17 +45,20 @@ export default function ActiveSession({
   const strokeOffset = RING_CIRCUMFERENCE * (1 - progress);
 
   return (
-    <section className="screen screen-active" data-screen="activeSession">
-      <div className={`countdown-ring${isPaused ? " countdown-ring-paused" : ""}`}>
+    <section
+      className="flex w-full max-w-sm flex-col items-center gap-6"
+      data-screen="activeSession"
+    >
+      <div className="relative h-[220px] w-[220px]">
         <svg
-          className="countdown-ring-svg"
+          className="block"
           width={RING_SIZE}
           height={RING_SIZE}
           viewBox={`0 0 ${RING_SIZE} ${RING_SIZE}`}
           aria-hidden
         >
           <circle
-            className="countdown-ring-track"
+            className="stroke-border"
             cx={RING_SIZE / 2}
             cy={RING_SIZE / 2}
             r={RING_RADIUS}
@@ -61,50 +66,72 @@ export default function ActiveSession({
             strokeWidth={RING_STROKE}
           />
           <circle
-            className="countdown-ring-progress"
+            className={cn(
+              "stroke-primary [transition:stroke-dashoffset_0.25s_linear]",
+              isPaused && "opacity-50",
+            )}
             cx={RING_SIZE / 2}
             cy={RING_SIZE / 2}
             r={RING_RADIUS}
             fill="none"
             strokeWidth={RING_STROKE}
+            strokeLinecap="round"
             strokeDasharray={RING_CIRCUMFERENCE}
             strokeDashoffset={strokeOffset}
             transform={`rotate(-90 ${RING_SIZE / 2} ${RING_SIZE / 2})`}
           />
         </svg>
-        <div className="countdown-ring-center">
-          <span className="timer-display">{formatTime(remainingSeconds)}</span>
-          {isPaused && <span className="countdown-paused-label">Paused</span>}
+        <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
+          <span className="font-mono text-[2rem] font-medium text-foreground tabular-nums">
+            {formatTime(remainingSeconds)}
+          </span>
+          {isPaused && (
+            <span className="text-xs uppercase tracking-[0.06em] text-muted-foreground">
+              Paused
+            </span>
+          )}
         </div>
       </div>
 
-      <div className="session-meta">
-        <h2 className="session-task">{session.task}</h2>
-        <p className="screen-subtitle">
+      <div className="flex flex-col gap-1">
+        <h2 className="text-xl font-normal leading-[1.2] tracking-[-0.03em]">
+          {session.task}
+        </h2>
+        <p className="text-sm text-muted-foreground">
           Began {formatStartTime(session.startedAt)} · {session.depth}
           {session.interrupts > 0 && ` · ${session.interrupts} interruption${session.interrupts === 1 ? "" : "s"}`}
         </p>
       </div>
 
-      <div className="screen-actions session-actions">
-        <div className="action-row">
-          <button
+      <div className="flex w-full flex-col gap-2">
+        <div className="grid grid-cols-2 gap-2">
+          <Button
             type="button"
-            className="btn btn-secondary"
+            variant="outline"
             onClick={isPaused ? onResume : onPause}
           >
             {isPaused ? "Resume" : "Pause"}
-          </button>
-          <button type="button" className="btn btn-secondary" onClick={onExtend}>
+          </Button>
+          <Button type="button" variant="outline" onClick={onExtend}>
             +10 min
-          </button>
+          </Button>
         </div>
-        <button type="button" className="btn btn-ghost" onClick={onInterrupt}>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-muted-foreground"
+          onClick={onInterrupt}
+        >
           Got distracted
-        </button>
-        <button type="button" className="btn btn-ghost" onClick={onEndEarly}>
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          className="text-muted-foreground"
+          onClick={onEndEarly}
+        >
           Done
-        </button>
+        </Button>
       </div>
     </section>
   );

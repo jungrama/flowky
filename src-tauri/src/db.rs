@@ -55,6 +55,14 @@ pub struct AppActivityTotal {
     pub seconds: i64,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Task {
+    pub id: Option<i64>,
+    pub title: String,
+    pub done: bool,
+    pub created_at: i64,
+}
+
 pub struct DbState {
     conn: Mutex<Connection>,
 }
@@ -98,6 +106,13 @@ CREATE TABLE IF NOT EXISTS app_activity (
     bucket     TEXT NOT NULL,
     seconds    INTEGER NOT NULL,
     FOREIGN KEY (session_id) REFERENCES sessions(id)
+);
+
+CREATE TABLE IF NOT EXISTS tasks (
+    id         INTEGER PRIMARY KEY AUTOINCREMENT,
+    title      TEXT NOT NULL,
+    done       INTEGER NOT NULL DEFAULT 0,
+    created_at INTEGER NOT NULL
 );
 ";
 
@@ -582,4 +597,84 @@ pub fn get_app_activity(
 
     rows.collect::<Result<Vec<_>, _>>()
         .map_err(|e| e.to_string())
+}
+
+// ── Tasks (simple todo list) ──────────────────────────────────────────
+
+#[tauri::command]
+pub fn get_tasks(db: State<'_, DbState>) -> Result<Vec<Task>, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    let mut stmt = conn
+        .prepare(
+            "SELECT id, title, done, created_at FROM tasks
+             ORDER BY done ASC, created_at DESC",
+        )
+        .map_err(|e| e.to_string())?;
+
+    let rows = stmt
+        .query_map([], |row| {
+            Ok(Task {
+                id: Some(row.get(0)?),
+                title: row.get(1)?,
+                done: row.get::<_, i64>(2)? != 0,
+                created_at: row.get(3)?,
+            })
+        })
+        .map_err(|e| e.to_string())?;
+
+    rows.collect::<Result<Vec<_>, _>>()
+        .map_err(|e| e.to_string())
+}
+
+#[tauri::command]
+pub fn add_task(
+    title: String,
+    created_at: i64,
+    db: State<'_, DbState>,
+) -> Result<Task, String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT INTO tasks (title, done, created_at) VALUES (?1, 0, ?2)",
+        params![title, created_at],
+    )
+    .map_err(|e| e.to_string())?;
+    Ok(Task {
+        id: Some(conn.last_insert_rowid()),
+        title,
+        done: false,
+        created_at,
+    })
+}
+
+#[tauri::command]
+pub fn update_task(
+    id: i64,
+    title: Option<String>,
+    done: Option<bool>,
+    db: State<'_, DbState>,
+) -> Result<(), String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    if let Some(title) = title {
+        conn.execute(
+            "UPDATE tasks SET title = ?1 WHERE id = ?2",
+            params![title, id],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    if let Some(done) = done {
+        conn.execute(
+            "UPDATE tasks SET done = ?1 WHERE id = ?2",
+            params![done as i64, id],
+        )
+        .map_err(|e| e.to_string())?;
+    }
+    Ok(())
+}
+
+#[tauri::command]
+pub fn delete_task(id: i64, db: State<'_, DbState>) -> Result<(), String> {
+    let conn = db.conn.lock().map_err(|e| e.to_string())?;
+    conn.execute("DELETE FROM tasks WHERE id = ?1", params![id])
+        .map_err(|e| e.to_string())?;
+    Ok(())
 }

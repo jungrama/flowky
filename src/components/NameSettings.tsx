@@ -1,18 +1,18 @@
 import { useState } from "react";
+import { Input } from "@/components/ui/input";
 import { getUserName, setUserName } from "../lib/preferences";
 
 export default function NameSettings() {
   const [name, setName] = useState(getUserName);
 
   return (
-    <div className="name-settings">
-      <p className="form-label">Your name</p>
-      <p className="screen-subtitle name-settings-copy">
+    <div className="mb-6 w-full">
+      <p className="mb-2 mt-1 text-sm text-muted-foreground">
         We&apos;ll greet you by name back on Home. Stays on this machine.
       </p>
-      <input
+      <Input
+        id="name-input"
         type="text"
-        className="name-settings-input"
         placeholder="e.g. Rama"
         value={name}
         maxLength={40}

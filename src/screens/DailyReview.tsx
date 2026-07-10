@@ -1,4 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import InfoHint from "../components/InfoHint";
 import SessionItem from "../components/SessionItem";
 import { useSessions } from "../hooks/useSessions";
@@ -14,7 +17,6 @@ import {
   formatDuration,
   isSameDay,
   last7DaysEnding,
-  scoreTone,
   sessionsForDay,
   totalInterruptions,
 } from "../lib/sessionStats";
@@ -32,12 +34,21 @@ interface DayScore {
 
 const MS_PER_DAY = 86_400_000;
 
+const STAT_CARD_CLASS = "gap-1 rounded-lg px-2 py-4 shadow-none";
+const STAT_ICON_CLASS =
+  "mb-1 inline-flex h-[30px] w-[30px] items-center justify-center rounded-md bg-primary/12 text-primary";
+const STAT_LABEL_CLASS =
+  "inline-flex items-center gap-[5px] text-xs text-muted-foreground";
+const STAT_VALUE_CLASS = "font-semibold text-foreground tabular-nums";
+
 export default function DailyReview({ date, onBack }: DailyReviewProps) {
   const { sessions, loadSessions, computeScore } = useSessions();
   const [todayScore, setTodayScore] = useState<number | null>(null);
   const [chartScores, setChartScores] = useState<DayScore[]>([]);
   const [appActivity, setAppActivity] = useState<AppActivityTotal[]>([]);
-  const [sessionScores, setSessionScores] = useState<Record<number, number>>({});
+  const [sessionScores, setSessionScores] = useState<Record<number, number>>(
+    {},
+  );
   const [sessionActivity, setSessionActivity] = useState<
     Record<number, AppActivityTotal[]>
   >({});
@@ -164,8 +175,21 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
   );
 
   const hasTodayData = todaySessions.length > 0;
-  const tone = todayScore !== null ? scoreTone(todayScore) : "amber";
   const maxChartScore = Math.max(100, ...chartScores.map((d) => d.score ?? 0));
+
+  // Compare the latest day (today) against the average of the prior days.
+  const chartCompare = useMemo(() => {
+    if (chartScores.length === 0) return null;
+    const latest = chartScores[chartScores.length - 1]?.score ?? null;
+    const prior = chartScores
+      .slice(0, -1)
+      .map((d) => d.score)
+      .filter((s): s is number => s !== null);
+    if (latest === null || prior.length === 0) return null;
+    const avg = prior.reduce((a, b) => a + b, 0) / prior.length;
+    const delta = Math.round(latest - avg);
+    return { today: Math.round(latest), avg: Math.round(avg), delta };
+  }, [chartScores]);
 
   const heading = isToday
     ? "Today's review"
@@ -176,60 +200,74 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
       });
 
   return (
-    <section className="screen screen-review" data-screen="dailyReview">
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          width: "100%",
-        }}
-      >
+    <section
+      className="flex w-full max-w-sm flex-col items-center gap-4"
+      data-screen="dailyReview"
+    >
+      <div className="flex w-full items-center">
         {onBack && (
-          <button
+          <Button
             type="button"
-            className="btn btn-ghost review-back"
-            style={{ marginTop: "8px", padding: "0px 4px" }}
+            variant="ghost"
+            size="icon"
+            className="mr-1 text-muted-foreground"
             onClick={onBack}
+            aria-label="Back"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-            >
-              <path
-                fill="currentColor"
-                d="M10 22L0 12L10 2l1.775 1.775L3.55 12l8.225 8.225z"
-              />
-            </svg>
-          </button>
+            <ChevronLeft />
+          </Button>
         )}
-        <h2>{heading}</h2>
+        <h2 className="text-2xl font-normal tracking-[-0.03em]">{heading}</h2>
       </div>
 
-      <div className={`review-score review-score-${tone}`}>
-        <span className="review-score-value">
+      <Card className="w-full items-center gap-1 rounded-xl p-6 shadow-none">
+        <span className="text-5xl font-semibold leading-none tabular-nums text-foreground">
           {hasTodayData && todayScore !== null ? Math.round(todayScore) : "—"}
         </span>
-        <span className="review-score-label">
+        <span className="inline-flex items-center gap-[5px] text-sm text-muted-foreground">
           Focus score
           <InfoHint
             placement="below"
             text="Your focus score from 0–100. It goes up when you finish sessions, avoid distractions, and rate them well. Recent sessions count more."
           />
         </span>
-      </div>
+      </Card>
 
-      <div className="review-chart" aria-label="7-day focus score">
-        <div className="review-chart-bars">
+      <Card
+        className="w-full gap-3 rounded-lg p-4 shadow-none"
+        aria-label="7-day focus score"
+      >
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="text-sm font-medium text-foreground">
+            Today vs the week before
+          </span>
+          {chartCompare && (
+            <span className="text-xs tabular-nums text-muted-foreground">
+              Today {chartCompare.today} · avg {chartCompare.avg}
+              <span className="ml-1 font-medium text-foreground">
+                {chartCompare.delta > 0
+                  ? `▲ ${chartCompare.delta}`
+                  : chartCompare.delta < 0
+                    ? `▼ ${Math.abs(chartCompare.delta)}`
+                    : "±0"}
+              </span>
+            </span>
+          )}
+        </div>
+        <div className="flex h-24 items-end justify-between gap-1">
           {chartScores.map((day) => {
             const height =
               day.score !== null ? (day.score / maxChartScore) * 100 : 4;
-            const barTone = day.score !== null ? scoreTone(day.score) : "empty";
             return (
-              <div key={day.date.toISOString()} className="review-chart-col">
+              <div
+                key={day.date.toISOString()}
+                className="flex h-full flex-1 flex-col items-center gap-1"
+              >
                 <div
-                  className={`review-chart-bar review-chart-bar-${barTone}`}
+                  className={
+                    "mt-auto min-h-[4px] w-full max-w-[2rem] rounded-t-md transition-[height] duration-300 " +
+                    (day.score !== null ? "bg-foreground" : "bg-border")
+                  }
                   style={{ height: `${height}%` }}
                   title={
                     day.score !== null
@@ -237,16 +275,18 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
                       : `${day.label}: no sessions`
                   }
                 />
-                <span className="review-chart-label">{day.label}</span>
+                <span className="text-xs text-muted-foreground">
+                  {day.label}
+                </span>
               </div>
             );
           })}
         </div>
-      </div>
+      </Card>
 
-      <div className="home-stats">
-        <div className="stat-card">
-          <span className="stat-icon" aria-hidden="true">
+      <div className="grid w-full grid-cols-3 gap-2">
+        <Card className={STAT_CARD_CLASS}>
+          <span className={STAT_ICON_CLASS} aria-hidden="true">
             <svg
               viewBox="0 0 24 24"
               width="18"
@@ -261,19 +301,19 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
               <path d="M12 7v5l3 2" />
             </svg>
           </span>
-          <span className="stat-label">
+          <span className={STAT_LABEL_CLASS}>
             Deep focus
             <InfoHint
               align="start"
               text="Total time you spent focused on your sessions."
             />
           </span>
-          <span className="stat-value stat-value-sm">
+          <span className={`${STAT_VALUE_CLASS} text-xl`}>
             {hasTodayData ? deepFocus : "—"}
           </span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-icon" aria-hidden="true">
+        </Card>
+        <Card className={STAT_CARD_CLASS}>
+          <span className={STAT_ICON_CLASS} aria-hidden="true">
             <svg
               viewBox="0 0 24 24"
               width="18"
@@ -287,14 +327,16 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
               <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8z" />
             </svg>
           </span>
-          <span className="stat-label">
+          <span className={STAT_LABEL_CLASS}>
             Interruptions
             <InfoHint text="Times you got distracted — you tapped “got distracted” or switched to a distracting app mid-session." />
           </span>
-          <span className="stat-value">{hasTodayData ? interrupts : "—"}</span>
-        </div>
-        <div className="stat-card">
-          <span className="stat-icon" aria-hidden="true">
+          <span className={`${STAT_VALUE_CLASS} text-2xl`}>
+            {hasTodayData ? interrupts : "—"}
+          </span>
+        </Card>
+        <Card className={STAT_CARD_CLASS}>
+          <span className={STAT_ICON_CLASS} aria-hidden="true">
             <svg
               viewBox="0 0 24 24"
               width="18"
@@ -309,33 +351,42 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
               <path d="m8.5 12 2.5 2.5 4.5-5" />
             </svg>
           </span>
-          <span className="stat-label">
+          <span className={STAT_LABEL_CLASS}>
             Completed
             <InfoHint
               align="end"
               text="Sessions you finished instead of ending early."
             />
           </span>
-          <span className="stat-value">{hasTodayData ? completed : "—"}</span>
-        </div>
+          <span className={`${STAT_VALUE_CLASS} text-2xl`}>
+            {hasTodayData ? completed : "—"}
+          </span>
+        </Card>
       </div>
 
       {appBreakdown.distraction > 0 && (
-        <div className="review-apps">
-          <p className="form-label">Distractions (today)</p>
-          <div className="review-distract-card">
-            <div className="review-distract-total">
-              <span className="review-distract-value">
+        <div className="mt-2 flex w-full flex-col gap-2">
+          <p className="text-sm font-medium text-muted-foreground">
+            Distractions (today)
+          </p>
+          <div className="flex items-stretch gap-4 rounded-[10px] border bg-card p-4">
+            <div className="flex flex-none flex-col gap-0.5 border-r pr-4">
+              <span className="text-2xl font-semibold leading-tight tabular-nums text-foreground">
                 {formatDuration(appBreakdown.distraction)}
               </span>
-              <span className="stat-label">lost to distractions</span>
+              <span className="text-xs text-muted-foreground">
+                lost to distractions
+              </span>
             </div>
             {appBreakdown.topDistractions.length > 0 && (
-              <ul className="review-apps-list review-distract-list">
+              <ul className="flex flex-1 flex-col justify-center gap-2">
                 {appBreakdown.topDistractions.map((row) => (
-                  <li key={row.app_name} className="review-apps-row">
-                    <span className="review-apps-title">{row.app_name}</span>
-                    <span className="review-apps-secs">
+                  <li
+                    key={row.app_name}
+                    className="flex justify-between gap-4 text-sm text-body"
+                  >
+                    <span className="truncate">{row.app_name}</span>
+                    <span className="flex-shrink-0 tabular-nums text-muted-foreground">
                       {formatDuration(row.seconds)}
                     </span>
                   </li>
@@ -346,16 +397,18 @@ export default function DailyReview({ date, onBack }: DailyReviewProps) {
         </div>
       )}
 
-      <div className="review-sessions">
-        <p className="form-label">
+      <div className="w-full text-left">
+        <p className="text-sm font-medium text-muted-foreground">
           {isToday ? "Today's sessions" : "Sessions"}
         </p>
         {todaySessions.length === 0 ? (
-          <p className="screen-subtitle">
-            {isToday ? "No sessions yet today — let's start one!" : "No sessions this day."}
+          <p className="mt-2 text-sm text-muted-foreground">
+            {isToday
+              ? "No sessions yet today — let's start one!"
+              : "No sessions this day."}
           </p>
         ) : (
-          <ul className="review-session-list">
+          <ul className="mt-2 flex list-none flex-col gap-2">
             {todaySessions.map((session) => {
               const key = session.id ?? session.started_at;
               return (

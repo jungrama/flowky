@@ -218,3 +218,38 @@ export async function openSystemSettings(
 export async function sendTestNotification(): Promise<void> {
   return invoke("send_test_notification");
 }
+
+// ── Tasks (simple todo list) ──────────────────────────────────────────
+
+export interface Task {
+  id?: number;
+  title: string;
+  done: boolean;
+  created_at: number;
+}
+
+export async function getTasks(): Promise<Task[]> {
+  return invoke("get_tasks");
+}
+
+export async function addTask(title: string): Promise<Task> {
+  return invoke("add_task", {
+    title,
+    createdAt: Math.floor(Date.now() / 1000),
+  });
+}
+
+export async function updateTask(
+  id: number,
+  changes: { title?: string; done?: boolean },
+): Promise<void> {
+  return invoke("update_task", {
+    id,
+    title: changes.title ?? null,
+    done: changes.done ?? null,
+  });
+}
+
+export async function deleteTask(id: number): Promise<void> {
+  return invoke("delete_task", { id });
+}
