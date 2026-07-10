@@ -8,7 +8,7 @@ Flowky is a native macOS focus timer that adapts to how you actually work. Built
 
 ## Demo
 
-![Flowky demo](./demo/demo.gif)
+https://github.com/user-attachments/assets/7f4ba0d3-996c-48cf-b9bf-1f175d2bdc9b
 
 ## Prerequisites
 
